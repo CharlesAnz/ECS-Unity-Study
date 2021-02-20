@@ -26,7 +26,7 @@ public class FallSystem : JobComponentSystem   // JobComponentSystem //SystemBas
     }
     */
 
-    /*
+    
 
     private EntityQuery m_Query;
     protected override void OnCreate()
@@ -101,11 +101,11 @@ public class FallSystem : JobComponentSystem   // JobComponentSystem //SystemBas
         }
     }
 
-    protected override void OnUpdate()
+    protected override JobHandle OnUpdate(JobHandle inputDeps)
     {
-        Dependency.Complete();
+        inputDeps.Complete();
 
-        ///*
+        
         var fallJob = new FallJobEntityBatch()
         {
             translationHandle = GetComponentTypeHandle<Translation>(false),
@@ -113,24 +113,27 @@ public class FallSystem : JobComponentSystem   // JobComponentSystem //SystemBas
 
             DeltaTime = World.Time.DeltaTime
         };
-        
-        Dependency = fallJob.ScheduleParallel(m_Query, 8, Dependency);
-        //
 
+        JobHandle handle = fallJob.ScheduleParallel(m_Query, 1, inputDeps);
+
+        /*
         var jobChunk = new FallJobChunk()
         {
             translationHandle = GetComponentTypeHandle<Translation>(false),
             componentTypeHandle = GetComponentTypeHandle<FallComponent>(true),
             DeltaTime = Time.DeltaTime
         };
-        Dependency = jobChunk.ScheduleParallel(m_Query, Dependency);
-
+        
+        JobHandle handle = jobChunk.ScheduleParallel(m_Query, inputDeps);
+        */
         m_Query.CompleteDependency();
+
+        return handle;
     }
 
-    */
+    
     //Using IJobForEach
-    ///*
+    /*
     struct fallJobECS : IJobForEach<Translation, FallComponent>
     {
         public float deltaTime;
@@ -154,5 +157,5 @@ public class FallSystem : JobComponentSystem   // JobComponentSystem //SystemBas
 
         return handle;
     }
-   // */
+   */
 }
