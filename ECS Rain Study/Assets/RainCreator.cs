@@ -57,7 +57,7 @@ public class RainCreator : MonoBehaviour
             });
             entityManager.SetComponentData(entity, new FallComponent
             {
-                Value = UnityEngine.Random.Range(1f, 4f)
+                Value = UnityEngine.Random.Range(5f, 10f)
             });
         }
 

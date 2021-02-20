@@ -11,7 +11,7 @@ using Unity.Burst;
 
 
 
-public class FallSystem : SystemBase   // JobComponentSystem //SystemBase //ComponentSystem
+public class FallSystem : JobComponentSystem   // JobComponentSystem //SystemBase //ComponentSystem
 {
 
     //Jarek's original ECS Code
@@ -26,6 +26,7 @@ public class FallSystem : SystemBase   // JobComponentSystem //SystemBase //Comp
     }
     */
 
+    /*
 
     private EntityQuery m_Query;
     protected override void OnCreate()
@@ -104,7 +105,7 @@ public class FallSystem : SystemBase   // JobComponentSystem //SystemBase //Comp
     {
         Dependency.Complete();
 
-        /*
+        ///*
         var fallJob = new FallJobEntityBatch()
         {
             translationHandle = GetComponentTypeHandle<Translation>(false),
@@ -114,7 +115,7 @@ public class FallSystem : SystemBase   // JobComponentSystem //SystemBase //Comp
         };
         
         Dependency = fallJob.ScheduleParallel(m_Query, 8, Dependency);
-        */
+        //
 
         var jobChunk = new FallJobChunk()
         {
@@ -123,12 +124,13 @@ public class FallSystem : SystemBase   // JobComponentSystem //SystemBase //Comp
             DeltaTime = Time.DeltaTime
         };
         Dependency = jobChunk.ScheduleParallel(m_Query, Dependency);
-        
+
+        m_Query.CompleteDependency();
     }
 
-    
+    */
     //Using IJobForEach
-    /*
+    ///*
     struct fallJobECS : IJobForEach<Translation, FallComponent>
     {
         public float deltaTime;
@@ -152,5 +154,5 @@ public class FallSystem : SystemBase   // JobComponentSystem //SystemBase //Comp
 
         return handle;
     }
-    */
+   // */
 }
