@@ -156,7 +156,7 @@ MonoBehaviour:
   material: {fileID: 2100000, guid: a105efc1b76905e4fa99af49f7b307db, type: 2}
   num: 70000
   rotation: 0
-  scale: 0.03
+  scale: 0.019
 --- !u!4 &211918845
 Transform:
   m_ObjectHideFlags: 0

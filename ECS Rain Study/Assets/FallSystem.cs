@@ -9,18 +9,19 @@ using Unity.Jobs;
 using Unity.Collections;
 using Unity.Burst;
 
-
-
 public class FallSystem : SystemBase   // JobComponentSystem //ComponentSystem
 {
+    /*
     private EntityQuery m_Query;
     protected override void OnCreate()
     {
         m_Query = GetEntityQuery(ComponentType.ReadOnly<Translation>(),
             ComponentType.ReadOnly<FallComponent>());
     }
-
+    */
+    
     //Original ECS Code
+    [BurstCompile]
     protected override void OnUpdate()
     {
         var time = Time.DeltaTime;
@@ -32,21 +33,21 @@ public class FallSystem : SystemBase   // JobComponentSystem //ComponentSystem
         }).ScheduleParallel();
     }
     
+    
     /*
     protected override JobHandle OnUpdate(JobHandle inputDeps)
     {
         inputDeps.Complete();
-
-
-        FallJobEntityBatch fallJob = new FallJobEntityBatch()
+        /*
+        FallJobEntityBatch fallBatchJob = new FallJobEntityBatch()
         {
             translationHandle = GetComponentTypeHandle<Translation>(false),
             fallCompHandle = GetComponentTypeHandle<FallComponent>(true),
 
             DeltaTime = World.Time.DeltaTime
         };
-
-        JobHandle handle = fallJob.ScheduleParallel(m_Query, 10, inputDeps);
+        JobHandle handle = fallBatchJob.ScheduleParallel(m_Query, 10, inputDeps);
+        */
 
         /*
         FallJobChunk jobChunk = new FallJobChunk()
@@ -55,37 +56,70 @@ public class FallSystem : SystemBase   // JobComponentSystem //ComponentSystem
             componentTypeHandle = GetComponentTypeHandle<FallComponent>(true),
             DeltaTime = Time.DeltaTime
         };
-        
         JobHandle handle = jobChunk.ScheduleParallel(m_Query, inputDeps);
-        */
+        
 
-        /*
+        
         FallJobForEach fallJobForEach = new FallJobForEach()
         {
             deltaTime = Time.DeltaTime
         };
-
         JobHandle handle = fallJobForEach.Schedule(this);
-
-        return handle;
         
+
         m_Query.CompleteDependency();
 
         return handle;
     }
     */
-    
-
     //Using IJobForEach
     struct FallJobForEach : IJobForEach<Translation, FallComponent>
     {
         public float deltaTime;
 
         [BurstCompile]
-        public void Execute(ref Translation c0, ref FallComponent c1)
+        public void Execute(ref Translation trans, ref FallComponent fallComp)
         {
-            c0.Value.y -= c1.Value * deltaTime;
-            if (c0.Value.y < 0) c0.Value.y = 10f;
+            trans.Value.y -= fallComp.Value * deltaTime;
+            if (trans.Value.y < 0) trans.Value.y = 30f;
+        }
+    }
+
+    //using IJobChunk
+    struct FallJobChunk : IJobChunk
+    {
+        public float DeltaTime;
+        public ComponentTypeHandle<Translation> translationHandle;
+        [ReadOnly] public ComponentTypeHandle<FallComponent> componentTypeHandle;
+
+        [BurstCompile]
+        public void Execute(ArchetypeChunk chunk, int chunkIndex, int firstEntityIndex)
+        {
+            var chunkTranslations = chunk.GetNativeArray(translationHandle);
+            var chunkFallComponents = chunk.GetNativeArray(componentTypeHandle);
+
+            for (var i = 0; i < chunk.Count; i++)
+            {
+                var translationY = chunkTranslations[i].Value.y;
+
+                translationY -= chunkFallComponents[i].Value * DeltaTime;
+
+                if (translationY < 0)
+                {
+                    translationY = 30f;
+                }
+
+                chunkTranslations[i] = new Translation
+                {
+                    Value = new float3(
+                    chunkTranslations[i].Value.x,
+                    translationY,
+                    chunkTranslations[i].Value.z)
+                };
+            }
+
+            chunkTranslations.Dispose();
+            chunkFallComponents.Dispose();
         }
     }
 
@@ -96,7 +130,7 @@ public class FallSystem : SystemBase   // JobComponentSystem //ComponentSystem
         public ComponentTypeHandle<Translation> translationHandle;
         [ReadOnly] public ComponentTypeHandle<FallComponent> fallCompHandle;
 
-        [BurstCompile(CompileSynchronously = true)]
+        [BurstCompile]
         public void Execute(ArchetypeChunk batchInChunk, int batchIndex)
         {
             var translations = batchInChunk.GetNativeArray(translationHandle);
@@ -116,41 +150,6 @@ public class FallSystem : SystemBase   // JobComponentSystem //ComponentSystem
 
             translations.Dispose();
             fallComponents.Dispose();
-        }
-    }
-
-    //using IJobChunk
-    struct FallJobChunk : IJobChunk
-    {
-        public float DeltaTime;
-        public ComponentTypeHandle<Translation> translationHandle;
-        [ReadOnly] public ComponentTypeHandle<FallComponent> componentTypeHandle;
-
-        [BurstCompile(CompileSynchronously = true)]
-        public void Execute(ArchetypeChunk chunk, int chunkIndex, int firstEntityIndex)
-        {
-            var chunkTranslations = chunk.GetNativeArray(translationHandle);
-            var chunkFallComponents = chunk.GetNativeArray(componentTypeHandle);
-
-            for (var i = 0; i < chunk.Count; i++)
-            {
-                var translationY = chunkTranslations[i].Value.y;
-
-                translationY -= chunkFallComponents[i].Value * DeltaTime;
-
-                if (translationY < 0)
-                {
-                    translationY = 30f;
-                }
-
-                chunkTranslations[i] = new Translation { Value = new float3(
-                    chunkTranslations[i].Value.x,
-                    translationY,
-                    chunkTranslations[i].Value.z) };
-            }
-
-            chunkTranslations.Dispose();
-            chunkFallComponents.Dispose();
         }
     }
 }

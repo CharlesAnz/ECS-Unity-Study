@@ -37,9 +37,9 @@ public class RainCreator : MonoBehaviour
             entityManager.SetComponentData(entity, new Translation
             {
                 Value = new float3(
-                UnityEngine.Random.Range(-80f, 80f),
+                UnityEngine.Random.Range(-50f, 50f),
                 UnityEngine.Random.Range(10f, 30f),
-                UnityEngine.Random.Range(-50f, 50f))
+                UnityEngine.Random.Range(-30f, 30f))
                 //1f, 1f, 1f)
             });
             entityManager.SetComponentData(entity, new Rotation
