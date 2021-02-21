@@ -11,28 +11,82 @@ using Unity.Burst;
 
 
 
-public class FallSystem : JobComponentSystem   // JobComponentSystem //SystemBase //ComponentSystem
+public class FallSystem : SystemBase   // JobComponentSystem //ComponentSystem
 {
-
-    //Jarek's original ECS Code
-    /*
-    protected override void OnUpdate()
-    {
-        Entities.ForEach((ref Translation translation, ref FallComponent moveComponent) =>
-        {
-            translation.Value.y -= moveComponent.Value * Time.DeltaTime;
-            if (translation.Value.y < 0) translation.Value.y = 30f;
-        });
-    }
-    */
-
-    
-
     private EntityQuery m_Query;
     protected override void OnCreate()
     {
         m_Query = GetEntityQuery(ComponentType.ReadOnly<Translation>(),
             ComponentType.ReadOnly<FallComponent>());
+    }
+
+    //Original ECS Code
+    protected override void OnUpdate()
+    {
+        var time = Time.DeltaTime;
+
+        Entities.ForEach((ref Translation translation, ref FallComponent moveComponent) =>
+        {
+            translation.Value.y -= moveComponent.Value * time;
+            if (translation.Value.y < 0) translation.Value.y = 30f;
+        }).ScheduleParallel();
+    }
+    
+    /*
+    protected override JobHandle OnUpdate(JobHandle inputDeps)
+    {
+        inputDeps.Complete();
+
+
+        FallJobEntityBatch fallJob = new FallJobEntityBatch()
+        {
+            translationHandle = GetComponentTypeHandle<Translation>(false),
+            fallCompHandle = GetComponentTypeHandle<FallComponent>(true),
+
+            DeltaTime = World.Time.DeltaTime
+        };
+
+        JobHandle handle = fallJob.ScheduleParallel(m_Query, 10, inputDeps);
+
+        /*
+        FallJobChunk jobChunk = new FallJobChunk()
+        {
+            translationHandle = GetComponentTypeHandle<Translation>(false),
+            componentTypeHandle = GetComponentTypeHandle<FallComponent>(true),
+            DeltaTime = Time.DeltaTime
+        };
+        
+        JobHandle handle = jobChunk.ScheduleParallel(m_Query, inputDeps);
+        */
+
+        /*
+        FallJobForEach fallJobForEach = new FallJobForEach()
+        {
+            deltaTime = Time.DeltaTime
+        };
+
+        JobHandle handle = fallJobForEach.Schedule(this);
+
+        return handle;
+        
+        m_Query.CompleteDependency();
+
+        return handle;
+    }
+    */
+    
+
+    //Using IJobForEach
+    struct FallJobForEach : IJobForEach<Translation, FallComponent>
+    {
+        public float deltaTime;
+
+        [BurstCompile]
+        public void Execute(ref Translation c0, ref FallComponent c1)
+        {
+            c0.Value.y -= c1.Value * deltaTime;
+            if (c0.Value.y < 0) c0.Value.y = 10f;
+        }
     }
 
     //using IJobEntityBatch
@@ -65,7 +119,7 @@ public class FallSystem : JobComponentSystem   // JobComponentSystem //SystemBas
         }
     }
 
-    //THiS USES IJOBCHUNK
+    //using IJobChunk
     struct FallJobChunk : IJobChunk
     {
         public float DeltaTime;
@@ -97,65 +151,6 @@ public class FallSystem : JobComponentSystem   // JobComponentSystem //SystemBas
 
             chunkTranslations.Dispose();
             chunkFallComponents.Dispose();
-
         }
     }
-
-    protected override JobHandle OnUpdate(JobHandle inputDeps)
-    {
-        inputDeps.Complete();
-
-        
-        var fallJob = new FallJobEntityBatch()
-        {
-            translationHandle = GetComponentTypeHandle<Translation>(false),
-            fallCompHandle = GetComponentTypeHandle<FallComponent>(true),
-
-            DeltaTime = World.Time.DeltaTime
-        };
-
-        JobHandle handle = fallJob.ScheduleParallel(m_Query, 1, inputDeps);
-
-        /*
-        var jobChunk = new FallJobChunk()
-        {
-            translationHandle = GetComponentTypeHandle<Translation>(false),
-            componentTypeHandle = GetComponentTypeHandle<FallComponent>(true),
-            DeltaTime = Time.DeltaTime
-        };
-        
-        JobHandle handle = jobChunk.ScheduleParallel(m_Query, inputDeps);
-        */
-        m_Query.CompleteDependency();
-
-        return handle;
-    }
-
-    
-    //Using IJobForEach
-    /*
-    struct fallJobECS : IJobForEach<Translation, FallComponent>
-    {
-        public float deltaTime;
-
-        [BurstCompile]
-        public void Execute(ref Translation c0, ref FallComponent c1)
-        {
-            c0.Value.y -= c1.Value * deltaTime;
-            if (c0.Value.y < 0) c0.Value.y = 10f;
-        }
-    }
-
-    protected override JobHandle OnUpdate(JobHandle inputDeps)
-    {
-        fallJobECS fallJob = new fallJobECS
-        {
-            deltaTime = Time.DeltaTime
-        };
-
-        JobHandle handle = fallJob.Schedule(this);
-
-        return handle;
-    }
-   */
 }
