@@ -9,19 +9,20 @@ using Unity.Jobs;
 using Unity.Collections;
 using Unity.Burst;
 
-public class FallSystem : SystemBase   // JobComponentSystem //ComponentSystem
+public class FallSystem : JobComponentSystem   // JobComponentSystem //ComponentSystem
 {
-    /*
+    
     private EntityQuery m_Query;
     protected override void OnCreate()
     {
         m_Query = GetEntityQuery(ComponentType.ReadOnly<Translation>(),
             ComponentType.ReadOnly<FallComponent>());
     }
-    */
+    
+    
     
     //Original ECS Code
-    [BurstCompile]
+    /*
     protected override void OnUpdate()
     {
         var time = Time.DeltaTime;
@@ -30,11 +31,11 @@ public class FallSystem : SystemBase   // JobComponentSystem //ComponentSystem
         {
             translation.Value.y -= moveComponent.Value * time;
             if (translation.Value.y < 0) translation.Value.y = 30f;
-        }).ScheduleParallel();
+        });
     }
+    */
     
     
-    /*
     protected override JobHandle OnUpdate(JobHandle inputDeps)
     {
         inputDeps.Complete();
@@ -49,7 +50,6 @@ public class FallSystem : SystemBase   // JobComponentSystem //ComponentSystem
         JobHandle handle = fallBatchJob.ScheduleParallel(m_Query, 10, inputDeps);
         */
 
-        /*
         FallJobChunk jobChunk = new FallJobChunk()
         {
             translationHandle = GetComponentTypeHandle<Translation>(false),
@@ -59,19 +59,19 @@ public class FallSystem : SystemBase   // JobComponentSystem //ComponentSystem
         JobHandle handle = jobChunk.ScheduleParallel(m_Query, inputDeps);
         
 
-        
+        /*
         FallJobForEach fallJobForEach = new FallJobForEach()
         {
             deltaTime = Time.DeltaTime
         };
         JobHandle handle = fallJobForEach.Schedule(this);
-        
+        */
 
         m_Query.CompleteDependency();
 
         return handle;
     }
-    */
+    
     //Using IJobForEach
     struct FallJobForEach : IJobForEach<Translation, FallComponent>
     {
